@@ -2,14 +2,16 @@ from flask import Flask, render_template, request, send_file
 from reportlab.platypus import SimpleDocTemplate, Image, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from assets.utils import convert_signature_base64, add_header_footer
+from static.utils import convert_signature_base64, add_header_footer
 import io
+from datetime import datetime
+import locale
 
 
-
+locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 app = Flask(__name__)
 
 @app.route("/")
@@ -22,9 +24,12 @@ def index():
 
 def gerar_pdf():
     
+    data = datetime.now()
     elements = []
     name = request.form["name"]
-    signature = convert_signature_base64( request.form["signature"])
+    print("@"*100)
+    print(request.form)
+    signature_path = convert_signature_base64( request.form["signature"])
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -37,15 +42,21 @@ def gerar_pdf():
    
     
     title_style = ParagraphStyle(
-        name="TituloPersonalizado",
-        fontName="Helvetica-BoldOblique",  
-        fontSize=24,                      
-        alignment=TA_CENTER,                      
+        name="TituloDeclaracao",
+        fontName="Helvetica-Bold",
+        fontSize=18,
+        alignment=TA_CENTER,
+        spaceBefore=30,
+        spaceAfter=20,
+        textColor=colors.black                  
     )
     text_style = ParagraphStyle(
-        name="TextoEsilizado",
-        fontSize=14,                      
-        alignment=TA_CENTER,  
+        name="TextoCorpo",
+        fontName="Helvetica",
+        fontSize=12,
+        alignment=TA_LEFT,
+        leading=16,      # altura da linha (importante)
+        spaceAfter=10
     )
 
 
@@ -58,7 +69,9 @@ def gerar_pdf():
         utilização de contraste, a fim de garantir uma melhor definição das imagens e um
         diagnóstico preciso."""
     
-    signature = Image("signature.png", width=6*cm,  height=2*cm)
+    data_text = f"Marília, {data.day} de {data.strftime('%B')} de {data.year}"
+    
+    signature = Image(signature_path, width=6*cm,  height=2*cm)
    
     signature_text = "Assinatura do paciente"
     
@@ -71,14 +84,17 @@ def gerar_pdf():
     signature_table = Table(data, colWidths=300)
     signature_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LINEABOVE', (0, 1), (-1, 1), 1, colors.black)  # linha acima do texto
+        ('LINEABOVE', (0, 1), (-1, 1), 1, colors.black)
     ]))
     elements.append(Spacer(1, 2*cm)) 
     elements.append(Paragraph(title, title_style))
-    elements.append(Spacer(1, 5*cm))
+    elements.append(Spacer(1, 3*cm))
     elements.append(Paragraph(text, text_style))
     elements.append(Spacer(1, 2*cm)) 
+    elements.append(Paragraph(data_text, text_style))
+    elements.append(Spacer(1, 2*cm)) 
     elements.append(signature_table)
+    
     
     doc.build(
         elements,
