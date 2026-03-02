@@ -5,30 +5,25 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from static.utils import convert_signature_base64, add_header_footer
+from static.utils import convert_signature_base64, add_header_footer, get_date
 import io
-from datetime import datetime
-import locale
 
 
-locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 app = Flask(__name__)
 
 @app.route("/")
 def index():
     return render_template("Declaracao-de-contraste.html")
 
-
-
 @app.route("/gerar", methods=["POST"])
 
 def gerar_pdf():
     
-    data = datetime.now()
+    day, month, year = get_date()
     elements = []
     name = request.form["name"]
-    print("@"*100)
-    print(request.form)
+    # print("@"*100)
+    # print(request.form)
     signature_path = convert_signature_base64( request.form["signature"])
 
     buffer = io.BytesIO()
@@ -39,8 +34,6 @@ def gerar_pdf():
         bottomMargin=3*cm
     )
 
-   
-    
     title_style = ParagraphStyle(
         name="TituloDeclaracao",
         fontName="Helvetica-Bold",
@@ -59,7 +52,6 @@ def gerar_pdf():
         spaceAfter=10
     )
 
-
     title = "Declaração"
     
     text = f"""Eu {name} declaro que fui submetido(a) ao
@@ -69,23 +61,24 @@ def gerar_pdf():
         utilização de contraste, a fim de garantir uma melhor definição das imagens e um
         diagnóstico preciso."""
     
-    data_text = f"Marília, {data.day} de {data.strftime('%B')} de {data.year}"
+    data_text = f"Marília, {day} de {month} de {year}"
     
     signature = Image(signature_path, width=6*cm,  height=2*cm)
    
     signature_text = "Assinatura do paciente"
     
-        
     data = [
         [signature],
         [signature_text]
     ]
     
     signature_table = Table(data, colWidths=300)
+
     signature_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('LINEABOVE', (0, 1), (-1, 1), 1, colors.black)
     ]))
+
     elements.append(Spacer(1, 2*cm)) 
     elements.append(Paragraph(title, title_style))
     elements.append(Spacer(1, 3*cm))
@@ -94,8 +87,7 @@ def gerar_pdf():
     elements.append(Paragraph(data_text, text_style))
     elements.append(Spacer(1, 2*cm)) 
     elements.append(signature_table)
-    
-    
+      
     doc.build(
         elements,
         onFirstPage=add_header_footer,
@@ -112,6 +104,7 @@ def gerar_pdf():
     )
     
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port='5000', debug=True)
+    
     
     
