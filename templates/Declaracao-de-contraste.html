@@ -56,28 +56,45 @@
 </style>
 </head>
 <body>
-    
-<div class="form-container">
-
-    <h2>Formulário</h2>
+<div class="container">
 
     <form id="form" method="POST" action="/gerar">
-        Nome:
-        <input type="text" name="name">
-        <p>"Eu {name} declaro que fui submetido(a) ao
-        exame de imagem, com uso de contraste, conforme solicitação médica.
-        Estou ciente que, de acordo com as condutas médicas e protocolos de radiologia, além do
-        médico solicitante, também é de responsabilidade do médico radiologista indicar a
-        utilização de contraste, a fim de garantir uma melhor definição das imagens e um
-        diagnóstico preciso."
-        </p>
-        <p>Assinatura:</p>
 
-        <canvas id="canvas"></canvas>
+        <!-- TELA 1 -->
+        <div id="step1">
+            <h2>Entrevista</h2>
 
-        <input type="hidden" name="signature" id="signature">
+            Nome:
+            <input type="text" name="name" required>
+            <p>"Eu ___________ declaro que fui submetido(a) ao
+            exame de imagem, com uso de contraste, conforme solicitação médica.
+            Estou ciente que, de acordo com as condutas médicas e protocolos de radiologia, além do
+            médico solicitante, também é de responsabilidade do médico radiologista indicar a
+            utilização de contraste, a fim de garantir uma melhor definição das imagens e um
+            diagnóstico preciso."
+            </p>
+            <br><br>
 
-        <button type="submit">Gerar PDF</button>
+            <button type="button" id="btnAssinar">
+                Ir para assinatura
+            </button>
+        </div>
+
+        <!-- TELA 2 -->
+        <div id="step2" style="display:none;">
+            <h2>Assinatura do Paciente</h2>
+
+            <canvas id="canvas"></canvas>
+
+            <input type="hidden" name="signature" id="signature">
+
+            <br><br>
+
+            <button type="submit">
+                Finalizar e Gerar PDF
+            </button>
+        </div>
+
     </form>
 
 </div>
@@ -90,9 +107,20 @@
 
 
 <script>
+    
+
+    
     document.addEventListener("DOMContentLoaded", function(){
-        startSignature("canvas", "form", "signature");
+        secondaryScreen(
+            "btnAssinar",
+            "canvas",
+            "step1",
+            "step2",
+            "form",
+            "signature"
+        )    
     });
+
 </script>
 
 </body>
