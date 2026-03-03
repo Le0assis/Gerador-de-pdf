@@ -6,105 +6,47 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from static.utils import convert_signature_base64, add_header_footer, get_date
+from generator.contraste import gerar_pdf as gerar_contraste
 import io
+import os
 
 
 app = Flask(__name__)
 
+BUILDERS = {
+    "declaracao-de-contraste": gerar_contraste
+}
+
 @app.route("/")
-def index():
-    return render_template("Declaracao-de-contraste.html")
+def home():
 
-@app.route("/gerar", methods=["POST"])
+    templates = "templates"
 
-def gerar_pdf():
-    
-    day, month, year = get_date()
-    elements = []
-    name = request.form["name"]
-    # print("@"*100)
-    # print(request.form)
-    signature_path = convert_signature_base64( request.form["signature"])
+    archives = os.listdir(templates)
+    documents = []
 
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        topMargin=4*cm,
-        bottomMargin=3*cm
-    )
+    for archive in  archives:
+        if archive.endswith(".html") and archive != "home.html":
+            name = archive.replace(".html", "")
+            documents.append(name)
+    
+    return render_template("home.html", documents=documents)
 
-    title_style = ParagraphStyle(
-        name="TituloDeclaracao",
-        fontName="Helvetica-Bold",
-        fontSize=18,
-        alignment=TA_CENTER,
-        spaceBefore=30,
-        spaceAfter=20,
-        textColor=colors.black                  
-    )
-    text_style = ParagraphStyle(
-        name="TextoCorpo",
-        fontName="Helvetica",
-        fontSize=12,
-        alignment=TA_LEFT,
-        leading=16,      # altura da linha (importante)
-        spaceAfter=10
-    )
+@app.route("/documento/<type>", methods=["GET", "POST"])
+def documento(type):
 
-    title = "Declaração"
-    
-    text = f"""Eu {name} declaro que fui submetido(a) ao
-        exame de imagem, com uso de contraste, conforme solicitação médica.
-        Estou ciente que, de acordo com as condutas médicas e protocolos de radiologia, além do
-        médico solicitante, também é de responsabilidade do médico radiologista indicar a
-        utilização de contraste, a fim de garantir uma melhor definição das imagens e um
-        diagnóstico preciso."""
-    
-    data_text = f"Marília, {day} de {month} de {year}"
-    
-    signature = Image(signature_path, width=6*cm,  height=2*cm)
-   
-    signature_text = "Assinatura do paciente"
-    
-    data = [
-        [signature],
-        [signature_text]
-    ]
-    
-    signature_table = Table(data, colWidths=300)
+    if type not in BUILDERS:
+        return f""" Documento não encontrado
+                    TIPO RECEBIDO: {type}
+                    CHAVES DISPONIVEIS {BUILDERS.keys()}""", 404
 
-    signature_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LINEABOVE', (0, 1), (-1, 1), 1, colors.black)
-    ]))
+    if request.method == "POST":
+        dados = request.form.to_dict()
+        return BUILDERS[type](dados)
 
-    elements.append(Spacer(1, 2*cm)) 
-    elements.append(Paragraph(title, title_style))
-    elements.append(Spacer(1, 3*cm))
-    elements.append(Paragraph(text, text_style))
-    elements.append(Spacer(1, 2*cm)) 
-    elements.append(Paragraph(data_text, text_style))
-    elements.append(Spacer(1, 2*cm)) 
-    elements.append(signature_table)
-      
-    doc.build(
-        elements,
-        onFirstPage=add_header_footer,
-        onLaterPages=add_header_footer
-    )
-    
-    buffer.seek(0)
-    
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f"{name}.pdf",
-        mimetype="application/pdf"
-    )
+    return render_template(f"{type}.html")
+
+
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port='5000', debug=True)
-    
-    
-    

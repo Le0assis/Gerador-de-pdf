@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Entreistas</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+</style>
+
+</head>
+<body>
+    
+    <h2>Entrevistas</h2>
+
+    <div class="cards-container">
+        {% for doc in documents %}
+            <div class="card" onclick="goTo('{{doc}}')">
+                <h3>{{ doc.replace('-', ' ').title() }}</h3>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function goTo(type){
+            window.location.href = "/documento/" + type;
+        }
+    </script>
+</body>
+</html>
